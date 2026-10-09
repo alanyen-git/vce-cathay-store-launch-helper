@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123a35">
+  <title>開店小幫手｜資產建檔 MVP</title>
+  <style>
+    :root { --ink:#18312e; --muted:#697a76; --line:#dce6e1; --paper:#f6f7f2; --white:#fff; --pine:#123a35; --teal:#17766c; --mint:#dff3e8; --gold:#f3b94b; --danger:#bd3b42; --shadow:0 12px 32px rgba(23,57,50,.10); }
+    * { box-sizing:border-box; }
+    body { margin:0; background:linear-gradient(180deg,#e8f0eb 0,#f6f7f2 45%); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif; min-height:100vh; }
+    button,input,select,textarea { font:inherit; }
+    button { cursor:pointer; }
+    .app { max-width:680px; margin:0 auto; min-height:100vh; background:var(--paper); padding-bottom:96px; }
+    .topbar { background:var(--pine); color:#fff; padding:calc(20px + env(safe-area-inset-top)) 20px 22px; border-radius:0 0 24px 24px; }
+    .brand { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .brand-left { display:flex; align-items:center; gap:11px; }
+    .logo { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; background:var(--gold); color:#243632; font-weight:900; font-size:21px; }
+    .eyebrow { margin:0 0 3px; color:#a9d4c6; font-size:12px; letter-spacing:.08em; }
+    h1 { margin:0; font-size:20px; letter-spacing:.02em; }
+    .project-chip { border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.08); color:#fff; border-radius:999px; padding:8px 11px; font-size:12px; }
+    .page { padding:18px 16px; }
+    .page-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin:4px 0 16px; }
+    h2 { font-size:24px; margin:0; line-height:1.25; }
+    h3 { margin:0; font-size:16px; }
+    .subtle { color:var(--muted); font-size:13px; margin:5px 0 0; line-height:1.45; }
+    .card { background:var(--white); border:1px solid var(--line); box-shadow:0 4px 16px rgba(23,57,50,.04); border-radius:18px; padding:16px; }
+    .card + .card { margin-top:12px; }
+    .status-card { background:linear-gradient(135deg,#e7f5ec,#fff6df); border-color:#e5ebd7; }
+    .metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0; }
+    .metric { padding:14px; border-radius:16px; background:#fff; border:1px solid var(--line); }
+    .metric b { display:block; font-size:24px; margin-top:3px; }
+    .metric span { color:var(--muted); font-size:12px; }
+    .toolbar { display:flex; align-items:center; gap:8px; margin:0 0 12px; }
+    .search { flex:1; position:relative; }
+    .search input { width:100%; padding:12px 12px 12px 38px; border-radius:13px; border:1px solid var(--line); background:#fff; outline:none; }
+    .search i { position:absolute; top:11px; left:13px; font-style:normal; color:var(--muted); }
+    .select-compact { max-width:120px; min-width:96px; padding:11px 8px; border:1px solid var(--line); background:#fff; border-radius:12px; color:var(--ink); }
+    .btn { border:0; border-radius:13px; padding:12px 15px; font-weight:750; min-height:44px; }
+    .btn-primary { color:#fff; background:var(--teal); box-shadow:0 8px 18px rgba(23,118,108,.19); }
+    .btn-secondary { color:var(--pine); background:#e5f2ec; }
+    .btn-outline { color:var(--pine); background:#fff; border:1px solid #b9d2c8; }
+    .btn-danger { color:var(--danger); background:#fff0f0; }
+    .btn-small { min-height:34px; padding:7px 10px; border-radius:10px; font-size:12px; }
+    .btn:disabled { opacity:.45; cursor:not-allowed; }
+    .stack { display:grid; gap:10px; }
+    .asset-row { display:flex; align-items:center; gap:12px; text-align:left; width:100%; border:0; background:#fff; padding:12px; border-radius:15px; border:1px solid var(--line); }
+    .asset-row + .asset-row { margin-top:9px; }
+    .thumb { width:54px; height:54px; border-radius:13px; object-fit:cover; background:linear-gradient(135deg,#d9eee8,#f7ddb0); flex:0 0 auto; }
+    .thumb-placeholder { display:grid; place-items:center; color:#387167; font-size:24px; }
+    .asset-main { min-width:0; flex:1; }
+    .asset-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:800; }
+    .asset-meta { font-size:12px; color:var(--muted); margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .asset-price { color:var(--pine); font-weight:800; font-size:13px; text-align:right; }
+    .pill { display:inline-flex; align-items:center; border-radius:999px; padding:4px 8px; font-size:11px; font-weight:800; white-space:nowrap; }
+    .pill.ok { background:#daf4e6; color:#1b7656; }
+    .pill.draft { background:#ecf0ef; color:#62736f; }
+    .pill.warn { background:#fff0ce; color:#8a5d00; }
+    .empty { text-align:center; padding:35px 20px; color:var(--muted); }
+    .empty .empty-icon { font-size:38px; display:block; margin-bottom:8px; }
+    .form-card { padding:17px; }
+    .section-label { color:var(--teal); font-size:12px; font-weight:850; letter-spacing:.08em; margin:2px 0 12px; }
+    .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .field { display:grid; gap:6px; }
+    .field.full { grid-column:1/-1; }
+    label { font-size:13px; font-weight:750; color:#38534e; }
+    label em { color:var(--danger); font-style:normal; }
+    input,select,textarea { width:100%; border:1px solid #cddbd5; background:#fff; color:var(--ink); border-radius:11px; padding:11px 10px; outline:none; min-height:43px; }
+    textarea { min-height:82px; resize:vertical; }
+    input:focus,select:focus,textarea:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(23,118,108,.12); }
+    input:disabled,select:disabled { background:#eef2f0; color:#6a7975; }
+    .photo-box { min-height:150px; border-radius:15px; background:linear-gradient(135deg,#dff1eb,#fcf1d4); border:1.5px dashed #90bdb0; display:grid; place-items:center; overflow:hidden; position:relative; }
+    .photo-box img { width:100%; height:190px; object-fit:cover; }
+    .photo-inner { text-align:center; padding:18px; color:#396d64; }
+    .photo-inner strong { display:block; font-size:15px; margin:4px 0; }
+    .photo-actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:10px; }
+    .form-actions { display:grid; grid-template-columns:1fr 1.25fr; gap:10px; margin-top:15px; }
+    .hint { font-size:12px; line-height:1.45; color:var(--muted); margin:8px 0 0; }
+    .notice { padding:11px 12px; border-radius:11px; font-size:13px; line-height:1.45; background:#edf7f2; color:#256557; border-left:3px solid #68aa91; }
+    .notice.warn { background:#fff5df; color:#7a590e; border-left-color:#dfad42; }
+    .detail-hero { display:flex; gap:14px; align-items:center; }
+    .detail-photo { width:96px; height:96px; border-radius:18px; object-fit:cover; background:#e2f0eb; flex:0 0 auto; }
+    .detail-name { font-size:20px; font-weight:850; line-height:1.3; }
+    .detail-no { margin-top:5px; color:var(--teal); font-weight:800; }
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; margin-top:15px; border:1px solid var(--line); border-radius:13px; overflow:hidden; }
+    .detail-cell { padding:12px; border-bottom:1px solid var(--line); }
+    .detail-cell:nth-child(odd) { border-right:1px solid var(--line); }
+    .detail-cell:nth-last-child(-n+2) { border-bottom:0; }
+    .detail-key { font-size:11px; color:var(--muted); }
+    .detail-value { margin-top:4px; font-size:14px; font-weight:750; word-break:break-word; }
+    .history { border-left:2px solid #b6d7cb; margin:16px 0 0 7px; padding-left:14px; }
+    .history-item { position:relative; margin:0 0 12px; font-size:13px; line-height:1.45; }
+    .history-item::before { content:""; position:absolute; width:9px; height:9px; border-radius:50%; background:var(--teal); left:-20px; top:4px; }
+    .history-item time { display:block; color:var(--muted); font-size:11px; margin-top:2px; }
+    .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:min(680px,100%); background:rgba(255,255,255,.96); backdrop-filter:blur(14px); border-top:1px solid var(--line); display:grid; grid-template-columns:repeat(4,1fr); padding:8px 8px calc(8px + env(safe-area-inset-bottom)); z-index:5; }
+    .nav-btn { border:0; background:transparent; color:#71827e; display:grid; gap:3px; place-items:center; padding:7px 4px; font-size:11px; }
+    .nav-btn span { font-size:20px; line-height:1; }
+    .nav-btn.active { color:var(--teal); font-weight:850; }
+    .fab { position:fixed; right:max(20px,calc((100vw - 680px)/2 + 20px)); bottom:82px; z-index:4; width:54px; height:54px; border:0; border-radius:18px; background:var(--gold); color:#254037; font-weight:900; font-size:27px; box-shadow:0 10px 25px rgba(105,74,15,.25); }
+    .toast { position:fixed; z-index:20; bottom:91px; left:50%; transform:translate(-50%,20px); opacity:0; pointer-events:none; background:#153b35; color:#fff; border-radius:12px; padding:12px 15px; font-size:13px; box-shadow:var(--shadow); transition:.22s ease; max-width:calc(100vw - 32px); text-align:center; }
+    .toast.show { transform:translate(-50%,0); opacity:1; }
+    .tagline { color:#90b4a9; font-size:12px; margin:0; }
+    .coming { border:1px dashed #a9c5ba; background:#f1f8f4; border-radius:17px; padding:19px; }
+    .list-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+    .row-between { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    @media (max-width:390px) { .field-grid { grid-template-columns:1fr; } .detail-grid { grid-template-columns:1fr; } .detail-cell:nth-child(odd) { border-right:0; } .detail-cell:nth-last-child(-n+2) { border-bottom:1px solid var(--line); } .detail-cell:last-child { border-bottom:0; } .project-chip { display:none; } }
+  </style>
+</head>
+<body>
+  <main class="app" id="app" aria-live="polite"></main>
+  <div class="toast" id="toast" role="status"></div>
+  <script>
+  (() => {
+    const STORAGE_KEY = 'storeLaunchHelperAssetsV1';
+    const CATEGORIES = [
+      { id:'kitchen', label:'廚房設備', prefix:'KIT', order:1 },
+      { id:'bar', label:'吧台設備', prefix:'BAR', order:2 },
+      { id:'dining', label:'餐廳設備', prefix:'DIN', order:3 },
+      { id:'furniture', label:'家具', prefix:'FUR', order:4 },
+      { id:'it', label:'資訊設備', prefix:'IT', order:5 },
+      { id:'other', label:'其他固定資產', prefix:'OTH', order:6 }
+    ];
+    const USAGE_UNITS = ['廚房','吧台','外場','倉庫','辦公區','中央倉庫／待進場'];
+    const PURCHASING_UNITS = ['總公司採購','門市自購','工程統包商','品牌總部','其他'];
+    const VENDORS = ['待確認','宏盛餐飲設備','新源冷凍工程','品味家具','雲端資訊科技','其他'];
+    const state = { view:'home', editingId:null, selectedId:null, search:'', filter:'all', pendingPhoto:'', removeExistingPhoto:false, assets:loadAssets() };
+    const app = document.getElementById('app');
+    const toastEl = document.getElementById('toast');
+
+    function loadAssets() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
+    function saveAssets() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.assets)); }
+    function uid() { return `asset-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+    function esc(value='') { return String(value).replace(/[&<>'"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m])); }
+    function money(value) { return new Intl.NumberFormat('zh-TW',{style:'currency',currency:'TWD',maximumFractionDigits:0}).format(Number(value || 0)); }
+    function categoryById(id) { return CATEGORIES.find(x => x.id === id) || CATEGORIES[CATEGORIES.length-1]; }
+    function formatDate(iso) { if (!iso) return '—'; return new Intl.DateTimeFormat('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso)); }
+    function nowIso() { return new Date().toISOString(); }
+    function availableNumbers(categoryId, excludeId) {
+      const cat = categoryById(categoryId);
+      const used = new Set(state.assets.filter(a => a.id !== excludeId && a.assetNo && a.status !== '草稿').map(a => a.assetNo));
+      const numbers = [];
+      for (let i=1; i<=100; i++) { const no = `${cat.prefix}-${String(i).padStart(3,'0')}`; if (!used.has(no)) numbers.push(no); }
+      return numbers;
+    }
+    function sortAssets(list) { return [...list].sort((a,b) => {
+      const ca = categoryById(a.category).order, cb = categoryById(b.category).order;
+      if (ca !== cb) return ca-cb;
+      return (a.assetNoSequence || 99999) - (b.assetNoSequence || 99999) || a.name.localeCompare(b.name,'zh-Hant');
+    }); }
+    function statusClass(status) { return status === '已列管' ? 'ok' : status === '草稿' ? 'draft' : 'warn'; }
+    function stats() { const live = state.assets.filter(a=>a.status === '已列管'); return { total:state.assets.length, live:live.length, value:live.reduce((sum,a)=>sum+Number(a.price||0),0), draft:state.assets.filter(a=>a.status==='草稿').length }; }
+    function topbar() { return `<header class="topbar"><div class="brand"><div class="brand-left"><div class="logo">店</div><div><p class="eyebrow">STORE LAUNCH HELPER</p><h1>開店小幫手</h1></div></div><button class="project-chip" data-action="toast" data-message="MVP 預設專案：○○店開幕專案">○○店開幕專案⌄</button></div></header>`; }
+    function nav() { return `<nav class="bottom-nav" aria-label="主要功能">
+      ${navButton('home','⌂','首頁')}${navButton('assets','▤','資產')}${navButton('schedule','◷','時程')}${navButton('settings','⚙','設定')}
+    </nav>${state.view !== 'form' && state.view !== 'detail' ? '<button class="fab" data-action="new" aria-label="新增固定資產">＋</button>' : ''}`; }
+    function navButton(view,icon,label) { return `<button class="nav-btn ${state.view===view?'active':''}" data-action="nav" data-view="${view}"><span>${icon}</span>${label}</button>`; }
+    function render() { let content = state.view==='home' ? renderHome() : state.view==='assets' ? renderAssets() : state.view==='form' ? renderForm() : state.view==='detail' ? renderDetail() : state.view==='schedule' ? renderSchedule() : renderSettings(); app.innerHTML = `${topbar()}${content}${nav()}`; }
+    function renderHome() {
+      const s=stats();
+      const recent=sortAssets(state.assets).slice(0,3);
+      return `<section class="page"><div class="page-heading"><div><h2>現場建檔，快速列管</h2><p class="subtle">固定資產 MVP・資料目前只保存在此裝置。</p></div><button class="btn btn-primary btn-small" data-action="new">新增資產</button></div>
+        <section class="card status-card"><div class="row-between"><div><h3>資產建檔進度</h3><p class="subtle">先完成設備拍照與基本列管，後續再接入時程與文件辨識。</p></div><span class="pill ok">MVP</span></div><div class="metrics"><div class="metric"><span>已列管</span><b>${s.live}</b></div><div class="metric"><span>資產總額</span><b style="font-size:18px">${money(s.value)}</b></div><div class="metric"><span>待補資料草稿</span><b>${s.draft}</b></div><div class="metric"><span>可用編號</span><b>${CATEGORIES.reduce((n,c)=>n+availableNumbers(c.id).length,0)}</b></div></div></section>
+        <div class="page-heading" style="margin-top:22px"><div><h3>最近資產</h3><p class="subtle">依分類與資產編號排序</p></div><button class="btn btn-outline btn-small" data-action="nav" data-view="assets">查看全部</button></div>
+        ${recent.length ? `<div class="stack">${recent.map(assetRow).join('')}</div>` : emptyState('▧','尚未建立資產','從拍照與填寫基本資料開始。','new')}
+      </section>`;
+    }
+    function assetRow(a) { const cat=categoryById(a.category); const photo=a.photo ? `<img class="thumb" src="${a.photo}" alt="${esc(a.name)}">` : '<div class="thumb thumb-placeholder">▧</div>'; return `<button class="asset-row" data-action="detail" data-id="${a.id}">${photo}<span class="asset-main"><span class="asset-name">${esc(a.name || '未命名資產')}</span><span class="asset-meta">${esc(a.assetNo || '尚未取得編號')} ・ ${cat.label} ・ ${esc(a.usageUnit || '未指定')}</span></span><span><span class="asset-price">${a.status==='草稿'?'—':money(a.price)}</span><span class="pill ${statusClass(a.status)}">${esc(a.status)}</span></span></button>`; }
+    function emptyState(icon,title,text,action) { return `<div class="card empty"><span class="empty-icon">${icon}</span><strong>${title}</strong><p class="subtle">${text}</p>${action?`<button class="btn btn-primary" style="margin-top:10px" data-action="${action}">新增固定資產</button>`:''}</div>`; }
+    function renderAssets() {
+      const filtered=sortAssets(state.assets.filter(a => { const q=state.search.trim().toLowerCase(); const matches=q ? [a.name,a.assetNo,a.spec,a.vendor,a.usageUnit].join(' ').toLowerCase().includes(q) : true; return matches && (state.filter==='all'||a.category===state.filter); }));
+      return `<section class="page"><div class="page-heading"><div><h2>固定資產</h2><p class="subtle">${state.assets.length} 筆資料・編號已使用即不再列入選單</p></div><button class="btn btn-primary btn-small" data-action="new">＋ 新增</button></div><div class="toolbar"><div class="search"><i>⌕</i><input id="searchInput" value="${esc(state.search)}" placeholder="搜尋名稱、編號、規格或廠商"></div><select id="filterCategory" class="select-compact"><option value="all">全部分類</option>${CATEGORIES.map(c=>`<option value="${c.id}" ${state.filter===c.id?'selected':''}>${c.label}</option>`).join('')}</select></div><div class="notice">清冊依「資產分類 → 資產編號」自動排序；草稿不占用資產編號。</div><div style="margin-top:12px">${filtered.length ? filtered.map(assetRow).join('') : emptyState('⌕','找不到符合資料','調整搜尋或分類條件，或建立新的資產。','new')}</div><div class="list-actions"><button class="btn btn-outline btn-small" data-action="export">匯出 Excel 相容清冊</button><button class="btn btn-secondary btn-small" data-action="email">Email 摘要</button></div></section>`;
+    }
+    function renderForm() {
+      const existing=state.editingId ? state.assets.find(a=>a.id===state.editingId) : null;
+      const a=existing || {category:'kitchen', usageUnit:'廚房', purchasingUnit:'總公司採購', vendor:'待確認', status:'已列管', photo:state.pendingPhoto, color:'',spec:'',name:'',price:'',notes:'',purchaseDate:'',warrantyEnd:''};
+      const isEdit=Boolean(existing); const options=availableNumbers(a.category, a.id); const noOptions=isEdit && a.assetNo ? [a.assetNo] : options; const preview=state.pendingPhoto || (state.removeExistingPhoto ? '' : a.photo);
+      return `<section class="page"><div class="page-heading"><div><h2>${isEdit?'編輯資產':'新增固定資產'}</h2><p class="subtle">${isEdit?'資產編號完成列管後不可直接修改。':'草稿可暫不填完整資料；正式列管會鎖定編號。'}</p></div><button class="btn btn-outline btn-small" data-action="back">取消</button></div>
+        <form id="assetForm" novalidate><section class="card form-card"><p class="section-label">01　資產照片</p><div class="photo-box">${preview?`<img src="${preview}" alt="資產照片預覽">`:`<div class="photo-inner"><span style="font-size:31px">▧</span><strong>拍攝資產與規格貼紙</strong><span>正式列管至少需要一張主照片</span></div>`}</div><div class="photo-actions"><label class="btn btn-secondary btn-small" for="photoInput">📷 拍照／上傳</label>${preview?'<button type="button" class="btn btn-outline btn-small" data-action="removePhoto">移除照片</button>':''}</div><input id="photoInput" accept="image/*" capture="environment" type="file" hidden></section>
+        <section class="card form-card"><p class="section-label">02　識別資料</p><div class="field-grid"><div class="field"><label>資產分類 <em>*</em></label><select id="category" name="category">${CATEGORIES.map(c=>`<option value="${c.id}" ${a.category===c.id?'selected':''}>${c.label}</option>`).join('')}</select></div><div class="field"><label>資產編號 <em>*</em></label><select id="assetNo" name="assetNo" ${isEdit?'disabled':''}>${isEdit?`<option>${esc(a.assetNo)}</option>`:`<option value="">請選擇（推薦 ${options[0]||'已用完'}）</option>${noOptions.map(n=>`<option value="${n}">${n}</option>`).join('')}`}</select></div><div class="field full"><label>資產名稱 <em>*</em></label><input name="name" maxlength="80" value="${esc(a.name)}" placeholder="例如：雙門冷藏冰箱"></div><div class="field"><label>顏色</label><input name="color" maxlength="40" value="${esc(a.color)}" placeholder="例如：銀色"></div><div class="field"><label>購買日期</label><input name="purchaseDate" type="date" value="${esc(a.purchaseDate)}"></div><div class="field full"><label>規格</label><textarea name="spec" maxlength="300" placeholder="品牌、型號、尺寸、容量等">${esc(a.spec)}</textarea></div></div></section>
+        <section class="card form-card"><p class="section-label">03　歸屬與金額</p><div class="field-grid"><div class="field"><label>使用單位 <em>*</em></label><select name="usageUnit">${USAGE_UNITS.map(x=>`<option ${a.usageUnit===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>採購單位 <em>*</em></label><select name="purchasingUnit">${PURCHASING_UNITS.map(x=>`<option ${a.purchasingUnit===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>單價（含稅）<em>*</em></label><input name="price" type="number" min="0" step="1" inputmode="numeric" value="${esc(a.price)}" placeholder="例如：85000"></div><div class="field"><label>提供廠商 <em>*</em></label><select name="vendor">${VENDORS.map(x=>`<option ${a.vendor===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>保固到期日</label><input name="warrantyEnd" type="date" value="${esc(a.warrantyEnd)}"></div><div class="field"><label>目前狀態</label><select name="status"><option ${a.status==='已列管'?'selected':''}>已列管</option><option ${a.status==='待盤點'?'selected':''}>待盤點</option><option ${a.status==='維修中'?'selected':''}>維修中</option></select></div><div class="field full"><label>備註</label><textarea name="notes" maxlength="400" placeholder="可記錄放置位置、驗收狀況或補充事項">${esc(a.notes)}</textarea></div></div><p class="hint">完成列管後，系統會自動從資產編號下拉選單移除該號碼。</p></section>
+        <div class="form-actions"><button type="button" class="btn btn-outline" data-action="saveDraft">儲存草稿</button><button type="submit" class="btn btn-primary">${isEdit?'儲存修改':'完成建檔'}</button></div></form></section>`;
+    }
+    function renderDetail() { const a=state.assets.find(x=>x.id===state.selectedId); if(!a){state.view='assets';return renderAssets();} const cat=categoryById(a.category); const history=a.history||[]; return `<section class="page"><div class="page-heading"><button class="btn btn-outline btn-small" data-action="back">‹ 返回清冊</button><button class="btn btn-primary btn-small" data-action="edit" data-id="${a.id}">編輯</button></div><section class="card"><div class="detail-hero">${a.photo?`<img class="detail-photo" src="${a.photo}" alt="${esc(a.name)}">`:'<div class="detail-photo thumb-placeholder">▧</div>'}<div><div class="detail-name">${esc(a.name || '未命名資產')}</div><div class="detail-no">${esc(a.assetNo || '草稿・尚未編號')}</div><div style="margin-top:8px"><span class="pill ${statusClass(a.status)}">${esc(a.status)}</span></div></div></div><div class="detail-grid">${detailCell('資產分類',cat.label)}${detailCell('使用單位',a.usageUnit)}${detailCell('採購單位',a.purchasingUnit)}${detailCell('提供廠商',a.vendor)}${detailCell('單價（含稅）',a.status==='草稿'?'—':money(a.price))}${detailCell('購買日期',a.purchaseDate||'—')}${detailCell('顏色',a.color||'—')}${detailCell('保固到期日',a.warrantyEnd||'—')}${detailCell('規格',a.spec||'—')}${detailCell('備註',a.notes||'—')}</div></section><section class="card"><div class="row-between"><h3>異動紀錄</h3><span class="subtle">不可刪除</span></div><div class="history">${history.map(h=>`<div class="history-item">${esc(h.text)}<time>${formatDate(h.at)} ${new Date(h.at).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}</time></div>`).join('')}</div></section></section>`; }
+    function detailCell(key,value) { return `<div class="detail-cell"><div class="detail-key">${key}</div><div class="detail-value">${esc(value)}</div></div>`; }
+    function renderSchedule() { return `<section class="page"><div class="page-heading"><div><h2>開店時程</h2><p class="subtle">行事曆、甘特圖與會議紀錄辨識將在下一個模組加入。</p></div></div><div class="coming"><h3>第二階段功能</h3><p class="subtle">此 MVP 已預留資產與任務關聯結構；下一步可建立開店任務、到貨驗收、保固提醒與甘特圖。</p><button class="btn btn-outline btn-small" data-action="toast" data-message="目前先完成資產建檔流程驗證。">查看規劃</button></div></section>`; }
+    function renderSettings() { return `<section class="page"><div class="page-heading"><div><h2>設定</h2><p class="subtle">MVP 基礎資料與資料管理。</p></div></div><section class="card"><h3>資料儲存</h3><p class="subtle">目前資料保存在這台裝置的瀏覽器，適合操作驗證；清除瀏覽器資料後會一併清除。</p><div class="list-actions"><button class="btn btn-secondary btn-small" data-action="loadDemo">載入示範資料</button><button class="btn btn-danger btn-small" data-action="clearData">清除本機資料</button></div></section><section class="card"><h3>下一版將接入</h3><p class="subtle">帳號與權限、雲端資料庫、照片儲存、正式 Excel .xlsx、Email 附件寄送、行事曆與甘特圖。</p></section></section>`; }
+    function showToast(message) { toastEl.textContent=message; toastEl.classList.add('show'); clearTimeout(showToast.timer); showToast.timer=setTimeout(()=>toastEl.classList.remove('show'),2600); }
+    function changeView(view) { state.view=view; state.editingId=null; state.selectedId=null; state.pendingPhoto=''; state.removeExistingPhoto=false; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+    function openNew() { state.view='form'; state.editingId=null; state.pendingPhoto=''; state.removeExistingPhoto=false; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+    function openEdit(id) { state.view='form'; state.editingId=id; state.pendingPhoto=''; state.removeExistingPhoto=false; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+    function openDetail(id) { state.view='detail'; state.selectedId=id; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+    function updateNumberOptions() { const category=document.getElementById('category'); const select=document.getElementById('assetNo'); if(!category||!select||state.editingId) return; const nums=availableNumbers(category.value); select.innerHTML=`<option value="">請選擇（推薦 ${nums[0]||'已用完'}）</option>${nums.map(n=>`<option value="${n}">${n}</option>`).join('')}`; }
+    async function compressPhoto(file) { return new Promise((resolve,reject)=>{ const reader=new FileReader(); reader.onerror=reject; reader.onload=()=>{ const img=new Image(); img.onerror=reject; img.onload=()=>{ const limit=1280; const ratio=Math.min(1,limit/Math.max(img.width,img.height)); const canvas=document.createElement('canvas'); canvas.width=Math.round(img.width*ratio); canvas.height=Math.round(img.height*ratio); canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height); resolve(canvas.toDataURL('image/jpeg',.78)); }; img.src=reader.result; }; reader.readAsDataURL(file); }); }
+    function formData() { const form=document.getElementById('assetForm'); return Object.fromEntries(new FormData(form).entries()); }
+    function parseSequence(assetNo) { const part=String(assetNo||'').split('-')[1]; return Number(part)||0; }
+    function saveAsset(isDraft) { const input=formData(); const editing=state.editingId ? state.assets.find(a=>a.id===state.editingId) : null; const photo=state.pendingPhoto || (state.removeExistingPhoto ? '' : editing?.photo) || ''; const status=isDraft ? '草稿' : input.status;
+      if (!isDraft) { const missing=[]; if(!photo) missing.push('主照片'); if(!input.category) missing.push('資產分類'); if(!editing && !input.assetNo) missing.push('資產編號'); if(!input.usageUnit) missing.push('使用單位'); if(!input.name.trim()) missing.push('資產名稱'); if(!input.purchasingUnit) missing.push('採購單位'); if(!input.price || Number(input.price)<=0) missing.push('單價（含稅）'); if(!input.vendor) missing.push('提供廠商'); if(missing.length){showToast(`請補齊：${missing.join('、')}`);return;} const no=editing?.assetNo||input.assetNo; if(state.assets.some(a=>a.id!==editing?.id&&a.assetNo===no&&a.status!=='草稿')){showToast('此資產編號已被使用，請重新選擇。');updateNumberOptions();return;} }
+      const date=nowIso(); const asset={ id:editing?.id||uid(), category:input.category||'kitchen', assetNo:isDraft?(editing?.assetNo||''):(editing?.assetNo||input.assetNo), assetNoSequence:isDraft?0:parseSequence(editing?.assetNo||input.assetNo), usageUnit:input.usageUnit||'', name:input.name?.trim()||'', color:input.color?.trim()||'', spec:input.spec?.trim()||'', purchasingUnit:input.purchasingUnit||'', price:Number(input.price||0), vendor:input.vendor||'', purchaseDate:input.purchaseDate||'', warrantyEnd:input.warrantyEnd||'', notes:input.notes?.trim()||'', status, photo, createdAt:editing?.createdAt||date, updatedAt:date, history:[...(editing?.history||[]),{at:date,text:editing?`更新資產資料${isDraft?'並儲存為草稿':''}`:isDraft?'建立資產草稿':'完成固定資產建檔'}]};
+      if(editing) state.assets=state.assets.map(a=>a.id===asset.id?asset:a); else state.assets.push(asset); saveAssets(); state.pendingPhoto=''; state.removeExistingPhoto=false; state.selectedId=asset.id; state.view='detail'; state.editingId=null; render(); showToast(isDraft?'草稿已儲存，尚未占用資產編號。':'資產已列管，編號已從可選清單移除。'); window.scrollTo({top:0,behavior:'smooth'}); }
+    function exportCsv() { const list=sortAssets(state.assets); if(!list.length){showToast('目前沒有可匯出的資產。');return;} const headers=['資產編號','資產分類','使用單位','資產名稱','顏色','規格','採購單位','單價(含稅)','提供廠商','購買日期','保固到期日','狀態','備註','建立時間','最後修改時間']; const csv=[headers,...list.map(a=>[a.assetNo,categoryById(a.category).label,a.usageUnit,a.name,a.color,a.spec,a.purchasingUnit,a.price,a.vendor,a.purchaseDate,a.warrantyEnd,a.status,a.notes,a.createdAt,a.updatedAt])].map(row=>row.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\r\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const link=document.createElement('a'); link.href=url; link.download=`固定資產清冊_${new Date().toISOString().slice(0,10)}.csv`; link.click(); URL.revokeObjectURL(url); showToast('已匯出 Excel 可直接開啟的 CSV 清冊。'); }
+    function demoData() { if(state.assets.length && !confirm('載入示範資料會保留現有資料並新增三筆示範資產，確定要繼續嗎？')) return; const stamp=nowIso(); const demo=[['kitchen','KIT-001','雙門冷藏冰箱','廚房',85000,'新源冷凍工程'],['bar','BAR-001','義式咖啡機','吧台',128000,'宏盛餐飲設備'],['it','IT-001','POS 終端機','外場',32000,'雲端資訊科技']].filter(([,no])=>!state.assets.some(a=>a.assetNo===no)).map(([category,assetNo,name,usageUnit,price,vendor])=>({id:uid(),category,assetNo,assetNoSequence:parseSequence(assetNo),usageUnit,name,color:'黑色',spec:'示範資料',purchasingUnit:'總公司採購',price,vendor,purchaseDate:'',warrantyEnd:'',notes:'示範資產，可自行編輯或清除。',status:'已列管',photo:'',createdAt:stamp,updatedAt:stamp,history:[{at:stamp,text:'建立示範資產'}]})); state.assets.push(...demo); saveAssets(); render(); showToast('已載入示範資料。'); }
+    app.addEventListener('click',e=>{ const target=e.target.closest('[data-action]'); if(!target)return; const action=target.dataset.action; if(action==='nav')changeView(target.dataset.view); if(action==='new')openNew(); if(action==='detail')openDetail(target.dataset.id); if(action==='edit')openEdit(target.dataset.id); if(action==='back')changeView(state.view==='detail'?'assets':'home'); if(action==='saveDraft')saveAsset(true); if(action==='removePhoto'){state.pendingPhoto=''; state.removeExistingPhoto=true; render();} if(action==='export')exportCsv(); if(action==='email'){const s=stats(); window.location.href=`mailto:?subject=${encodeURIComponent('【固定資產摘要】○○店')}&body=${encodeURIComponent(`目前已列管 ${s.live} 筆固定資產，總額 ${money(s.value)}。\n\nMVP 提醒：請先下載匯出的清冊後自行加入附件。`)}`; showToast('已開啟 Email 摘要；正式附件寄送將於後端版加入。');} if(action==='toast')showToast(target.dataset.message||'功能說明'); if(action==='loadDemo')demoData(); if(action==='clearData'){if(confirm('確定清除本機所有資產資料？此動作無法復原。')){state.assets=[];saveAssets();changeView('home');showToast('本機資料已清除。');}} });
+    app.addEventListener('change',async e=>{ if(e.target.id==='category')updateNumberOptions(); if(e.target.id==='filterCategory'){state.filter=e.target.value;render();} if(e.target.id==='photoInput'&&e.target.files?.[0]){try{state.pendingPhoto=await compressPhoto(e.target.files[0]);state.removeExistingPhoto=false;render();}catch{showToast('照片讀取失敗，請改用其他圖片。');}} });
+    app.addEventListener('input',e=>{if(e.target.id==='searchInput'){state.search=e.target.value; render(); const input=document.getElementById('searchInput'); input?.focus(); input?.setSelectionRange(state.search.length,state.search.length);}});
+    app.addEventListener('submit',e=>{if(e.target.id==='assetForm'){e.preventDefault();saveAsset(false);}});
+    render();
+  })();
+  </script>
+</body>
+</html>
