@@ -1,0 +1,25 @@
+name: Expand source snapshot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  expand:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand verified source snapshot
+        run: |
+          set -euo pipefail
+          unzip -o -q vce-cathay-store-launch-helper-source.zip
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Expand source snapshot"
+          git push
