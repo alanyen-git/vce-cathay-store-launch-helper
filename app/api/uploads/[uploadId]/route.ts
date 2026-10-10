@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { uploads } from "@/db/schema";
-import { ApiError, errorResponse, requireOrganization } from "@/lib/server";
+import { ApiError, assertRole, errorResponse, requireOrganization } from "@/lib/server";
 
 export async function DELETE(
   request: Request,
@@ -11,6 +11,7 @@ export async function DELETE(
   try {
     const { uploadId } = await params;
     const context = await requireOrganization(new URL(request.url).searchParams.get("organizationId"));
+    assertRole(context.role, ["admin", "manager", "editor"]);
     const db = getDb();
     const [upload] = await db
       .select()
