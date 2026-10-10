@@ -148,7 +148,7 @@ function readImageDimensions(contentType: string, bytes: Uint8Array) {
   }
 
   if (contentType === "image/webp") {
-    if (bytes.length < 30) return null;
+    if (bytes.length < 20) return null;
     const chunkType = String.fromCharCode(bytes[12], bytes[13], bytes[14], bytes[15]);
     if (chunkType === "VP8X") {
       const width = 1 + bytes[24] + (bytes[25] << 8) + (bytes[26] << 16);
