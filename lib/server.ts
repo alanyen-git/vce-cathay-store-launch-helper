@@ -47,7 +47,10 @@ export async function requireUser(): Promise<ChatGPTUser> {
 
 async function seedOrganization(user: ChatGPTUser) {
   const db = getDb();
-  const organizationId = newId();
+  // A stable per-user organization ID makes simultaneous first-login requests
+  // contend on the same primary key instead of creating duplicate workspaces.
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(user.userId));
+  const organizationId = `org_${Array.from(new Uint8Array(digest).slice(0, 16), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
   const createdAt = now();
   const defaultStoreId = newId();
   const defaultProjectId = newId();
@@ -136,13 +139,32 @@ export async function requireOrganization(organizationId?: string | null) {
 
   let selected = memberships.find((member) => member.organizationId === organizationId) ?? memberships[0];
   if (!selected) {
-    const id = await seedOrganization(user);
-    selected = {
-      organizationId: id,
-      role: "admin",
-      name: "我的公司",
-      memberUserId: user.userId,
-    };
+    try {
+      const id = await seedOrganization(user);
+      selected = {
+        organizationId: id,
+        role: "admin",
+        name: "我的公司",
+        memberUserId: user.userId,
+      };
+    } catch (error) {
+      // Another first-login request may have created this user's workspace
+      // first. Re-read membership before treating the insert conflict as fatal.
+      const [createdByConcurrentRequest] = await db
+        .select({
+          organizationId: organizationMembers.organizationId,
+          role: organizationMembers.role,
+          name: organizations.name,
+          memberUserId: organizationMembers.userId,
+        })
+        .from(organizationMembers)
+        .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
+        .where(or(eq(organizationMembers.userId, user.userId), eq(organizationMembers.email, user.email)))
+        .orderBy(asc(organizations.createdAt))
+        .limit(1);
+      if (!createdByConcurrentRequest) throw error;
+      selected = createdByConcurrentRequest;
+    }
   }
   if (organizationId && selected.organizationId !== organizationId) {
     throw new ApiError("你沒有這家公司的存取權限。", 403);

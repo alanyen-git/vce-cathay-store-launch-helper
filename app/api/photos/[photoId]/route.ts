@@ -33,7 +33,7 @@ export async function GET(
     return new Response(object.body, {
       headers: {
         "content-type": object.httpMetadata?.contentType || upload.contentType,
-        "cache-control": "private, max-age=3600",
+        "cache-control": "private, no-store",
         "x-content-type-options": "nosniff",
       },
     });
