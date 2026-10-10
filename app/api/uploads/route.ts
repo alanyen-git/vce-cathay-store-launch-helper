@@ -114,7 +114,8 @@ function hasExpectedImageSignature(contentType: string, bytes: Uint8Array) {
 
 function readImageDimensions(contentType: string, bytes: Uint8Array) {
   if (contentType === "image/png") {
-    if (bytes.length < 24) return null;
+    if (bytes.length < 33 || readUint32BE(bytes, 8) !== 13 ||
+        String.fromCharCode(bytes[12], bytes[13], bytes[14], bytes[15]) !== "IHDR") return null;
     const width = readUint32BE(bytes, 16);
     const height = readUint32BE(bytes, 20);
     return width > 0 && height > 0 ? { width, height } : null;
