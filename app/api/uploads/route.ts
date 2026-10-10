@@ -151,6 +151,7 @@ function readImageDimensions(contentType: string, bytes: Uint8Array) {
     if (bytes.length < 20) return null;
     const chunkType = String.fromCharCode(bytes[12], bytes[13], bytes[14], bytes[15]);
     if (chunkType === "VP8X") {
+      if (bytes.length < 30) return null;
       const width = 1 + bytes[24] + (bytes[25] << 8) + (bytes[26] << 16);
       const height = 1 + bytes[27] + (bytes[28] << 8) + (bytes[29] << 16);
       return { width, height };
