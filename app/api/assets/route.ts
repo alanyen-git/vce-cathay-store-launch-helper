@@ -98,6 +98,11 @@ export async function POST(request: Request) {
     assertRole(context.role, ["admin", "manager", "editor"]);
     const requestKey = readIdempotencyKey(request);
     const db = getDb();
+    const input = validatePayload(payload);
+    const isManager = context.role === "admin" || context.role === "manager";
+    if ((input.requestedAssetNo || input.importStatus) && !isManager) {
+      throw new ApiError("只有管理者可保留舊資料編號或狀態。", 403);
+    }
 
     const [previous] = await db
       .select({ assetId: idempotencyKeys.assetId, assetNo: idempotencyKeys.assetNo })
@@ -108,12 +113,11 @@ export async function POST(request: Request) {
         eq(idempotencyKeys.requestKey, requestKey),
       ))
       .limit(1);
-    if (previous) return Response.json({ asset: { id: previous.assetId, assetNo: previous.assetNo }, replayed: true });
-
-    const input = validatePayload(payload);
-    const isManager = context.role === "admin" || context.role === "manager";
-    if ((input.requestedAssetNo || input.importStatus) && !isManager) {
-      throw new ApiError("只有管理者可保留舊資料編號或狀態。", 403);
+    if (previous) {
+      if (!(await isSameAssetRequest(db, context.organizationId, previous.assetId, previous.assetNo, input))) {
+        throw new ApiError("同一建檔識別碼不可用於不同內容，請重新開啟表單後再送出。", 409);
+      }
+      return Response.json({ asset: { id: previous.assetId, assetNo: previous.assetNo }, replayed: true });
     }
 
     const master = await getMasterData(context.organizationId);
@@ -225,7 +229,12 @@ export async function POST(request: Request) {
             eq(idempotencyKeys.requestKey, requestKey),
           ))
           .limit(1);
-        if (replayed) return Response.json({ asset: { id: replayed.assetId, assetNo: replayed.assetNo }, replayed: true });
+        if (replayed) {
+          if (!(await isSameAssetRequest(db, context.organizationId, replayed.assetId, replayed.assetNo, input))) {
+            throw new ApiError("同一建檔識別碼不可用於不同內容，請重新開啟表單後再送出。", 409);
+          }
+          return Response.json({ asset: { id: replayed.assetId, assetNo: replayed.assetNo }, replayed: true });
+        }
         if (input.requestedAssetNo || !isUniqueError(error) || attempt === 2) {
           throw isUniqueError(error)
             ? new ApiError("資產編號或照片剛被其他操作使用，請重新確認後再試。", 409)
@@ -237,6 +246,65 @@ export async function POST(request: Request) {
   } catch (error) {
     return errorResponse(error);
   }
+}
+
+async function isSameAssetRequest(
+  db: ReturnType<typeof getDb>,
+  organizationId: string,
+  assetId: string,
+  assetNo: string,
+  input: ReturnType<typeof validatePayload>,
+) {
+  if (input.requestedAssetNo && input.requestedAssetNo !== assetNo) return false;
+  const [existing] = await db
+    .select({
+      currentStoreId: assets.currentStoreId,
+      originProjectId: assets.originProjectId,
+      categoryId: assets.categoryId,
+      usageUnitId: assets.usageUnitId,
+      purchasingUnitId: assets.purchasingUnitId,
+      vendorId: assets.vendorId,
+      name: assets.name,
+      color: assets.color,
+      specification: assets.specification,
+      unitPrice: assets.unitPrice,
+      purchaseDate: assets.purchaseDate,
+      warrantyEnd: assets.warrantyEnd,
+      notes: assets.notes,
+      status: assets.status,
+    })
+    .from(assets)
+    .where(and(eq(assets.id, assetId), eq(assets.organizationId, organizationId)))
+    .limit(1);
+  if (!existing) return false;
+
+  const sameFields =
+    existing.currentStoreId === input.currentStoreId &&
+    (existing.originProjectId ?? "") === input.originProjectId &&
+    existing.categoryId === input.categoryId &&
+    existing.usageUnitId === input.usageUnitId &&
+    existing.purchasingUnitId === input.purchasingUnitId &&
+    existing.vendorId === input.vendorId &&
+    existing.name === input.name &&
+    existing.color === input.color &&
+    existing.specification === input.specification &&
+    existing.unitPrice === input.unitPrice &&
+    (existing.purchaseDate ?? "") === input.purchaseDate &&
+    (existing.warrantyEnd ?? "") === input.warrantyEnd &&
+    existing.notes === input.notes &&
+    existing.status === (input.importStatus || "已列管");
+  if (!sameFields) return false;
+
+  const existingPhotos = await db
+    .select({ uploadId: assetPhotos.uploadId })
+    .from(assetPhotos)
+    .where(and(
+      eq(assetPhotos.organizationId, organizationId),
+      eq(assetPhotos.assetId, assetId),
+    ))
+    .orderBy(asc(assetPhotos.position));
+  return existingPhotos.length === input.uploadIds.length &&
+    existingPhotos.every((photo, index) => photo.uploadId === input.uploadIds[index]);
 }
 
 function validatePayload(payload: AssetPayload) {
